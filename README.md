@@ -1,35 +1,50 @@
-# Atividade Docker + CI + CD
+# Projeto Docker + Docker Compose + CI + CD
 
-**Aluno(a):** [Seu nome completo]  
-**Turma:** [Sua turma]  
-**Data:** [Data da entrega]
+## Informações do aluno
 
-**Aplicação utilizada:** docker/getting-started-app (To-Do em Node.js)
+**Aluno(a):** Luiza Eduarda L da C Mendes  
+**Turma:** Noturno
+**Data:** 28/07/2026
+
+**Aplicação utilizada:** Docker Getting Started App (To-Do em Node.js)
 
 ---
 
-# 1. Como executar este projeto
+# Sobre o projeto
+
+Este projeto teve como objetivo aprender a utilizar Docker para empacotar uma aplicação, criar imagens, trabalhar com containers, volumes, redes e Docker Compose.
+
+Também foi implementado um processo de CI usando GitHub Actions para testar automaticamente a aplicação e um processo de CD para publicar a imagem Docker no Docker Hub.
+
+---
+
+# 1. Como executar o projeto
 
 Clone o repositório:
 
 ```bash
-git clone [URL do seu repositório]
-cd [nome da pasta]
+git clone https://github.com/dudalps435/meu-projeto-docker.git
 ```
 
-Copie o arquivo de exemplo das variáveis de ambiente:
+Entre na pasta:
+
+```bash
+cd meu-projeto-docker
+```
+
+Crie o arquivo de ambiente:
 
 ```bash
 cp .env.example .env
 ```
 
-Suba os containers:
+Suba a aplicação:
 
 ```bash
 docker compose up -d --build
 ```
 
-Acesse a aplicação:
+A aplicação estará disponível em:
 
 ```
 http://localhost:3000
@@ -41,7 +56,7 @@ Para parar os containers:
 docker compose down
 ```
 
-Para parar e apagar os volumes:
+Para remover containers e volumes:
 
 ```bash
 docker compose down -v
@@ -49,353 +64,255 @@ docker compose down -v
 
 ---
 
-# 2. Imagem e Dockerfile Multi-stage
+# 2. Dockerfile Multi-stage
 
-**Estágios utilizados**
+Foi criado um Dockerfile utilizando multi-stage build.
 
-- Builder: instala as dependências e prepara a aplicação.
-- Runtime: gera uma imagem menor contendo apenas o necessário para executar o projeto.
+Foram utilizados dois estágios:
 
-**Imagem base**
+## Builder
+
+Responsável por instalar as dependências e preparar a aplicação.
+
+## Runtime
+
+Responsável apenas por executar a aplicação com os arquivos necessários.
+
+A imagem base utilizada foi:
 
 ```
 node:20-alpine
 ```
 
-**Usuário de execução**
+A aplicação roda utilizando usuário não-root para melhorar a segurança.
+
+## Tamanho da imagem final
 
 ```
-node (não-root)
+A imagem final possui aproximadamente 286MB.
 ```
 
-**Tamanho final da imagem**
+## Por que o multi-stage ajuda?
 
-[Informe o tamanho obtido com `docker images`.]
-
-### Por que o multi-stage ajuda?
-
-O Dockerfile multi-stage reduz o tamanho da imagem final, pois copia apenas os arquivos necessários para execução da aplicação. Isso torna o download mais rápido e melhora a segurança.
+O multi-stage reduz o tamanho da imagem final porque separa a instalação das dependências da execução da aplicação. Assim são enviados apenas os arquivos necessários, deixando a imagem mais leve e segura.
 
 ---
 
-## Print 1
+# 3. Volumes e persistência
 
-*Build da imagem e resultado do comando `docker images`.*
+Foram realizados testes para verificar a diferença entre usar e não usar volumes.
 
-(Coloque a imagem aqui)
+Sem volume, ao remover o container os dados das tarefas são perdidos.
+
+Com volume nomeado, os dados permanecem salvos mesmo criando um novo container.
+
+## Volume utilizado
+
+```
+todo-db
+```
+
+## Caminho dentro do container
+
+```
+/etc/todos
+```
+
+## Diferença entre docker compose down e docker compose down -v
+
+O `docker compose down` remove os containers, mas mantém os dados dos volumes. Já o `docker compose down -v` remove também os volumes e apaga os dados armazenados.
 
 ---
 
-## Print 2
+# 4. Rede Docker
 
-*Aplicação funcionando com tarefas cadastradas.*
+Foi criada uma rede para permitir a comunicação entre a aplicação e o banco MySQL.
 
-(Coloque a imagem aqui)
-
----
-
-# 3. Volumes e Persistência
-
-**Volume utilizado**
+## Rede criada
 
 ```
-[nome do volume]
+todo-net
 ```
 
-**Montado em**
-
-```
-[caminho dentro do container]
-```
-
----
-
-## Print 3
-
-*Sem volume: dados perdidos após recriar o container.*
-
-(Coloque a imagem aqui)
-
----
-
-## Print 4
-
-*Com volume: dados preservados.*
-
-(Coloque a imagem aqui)
-
----
-
-### Diferença entre `docker compose down` e `docker compose down -v`
-
-O comando `docker compose down` remove apenas os containers e a rede. Já `docker compose down -v` também remove os volumes, apagando os dados persistidos.
-
----
-
-# 4. Rede
-
-**Rede criada**
-
-```
-[nome da rede]
-```
-
-**Serviços conectados**
+## Serviços conectados
 
 - app
-- db
+- mysql
 
-### A porta do banco está exposta ao host?
+O banco de dados não possui porta publicada para o host, pois somente a aplicação precisa acessar o serviço.
 
-Não. O banco fica acessível apenas pela rede interna do Docker, aumentando a segurança da aplicação.
-
-### Por que o aplicativo consegue acessar o banco usando o nome do serviço?
-
-Porque o Docker Compose cria uma rede interna com DNS próprio, permitindo que os containers se comuniquem usando o nome dos serviços.
-
----
-
-## Print 5
-
-*Resultado do comando `docker network inspect`.*
-
-(Coloque a imagem aqui)
-
----
-
-## Print 6
-
-*Resultado do comando `SELECT * FROM todo_items;`.*
-
-(Coloque a imagem aqui)
+O aplicativo consegue encontrar o banco pelo nome `mysql` porque o Docker possui DNS interno, permitindo comunicação entre containers pelo nome do serviço.
 
 ---
 
 # 5. Docker Compose
 
-**Serviços**
+Foi criado o arquivo:
+
+```
+compose.yaml
+```
+
+Ele permite subir toda a aplicação com apenas um comando.
+
+Serviços utilizados:
 
 - app
 - db
 
-**Rede**
+Recursos configurados:
 
-```
-[nome da rede]
-```
+- Rede nomeada
+- Volume nomeado
+- Variáveis de ambiente
+- Healthcheck no banco
+- Dependência do app aguardando o banco estar pronto
 
-**Volume**
+As informações sensíveis ficam no arquivo `.env`, que não é enviado para o GitHub.
 
-```
-[nome do volume]
-```
-
-**Healthcheck**
-
-```
-db
-```
-
-**depends_on**
-
-```
-condition: service_healthy
-```
-
-As variáveis sensíveis são carregadas pelo arquivo `.env`, que não é enviado ao GitHub. Apenas o `.env.example` é versionado.
-
----
-
-## Print 7
-
-*Resultado do comando `docker compose ps`.*
-
-(Coloque a imagem aqui)
+O arquivo `.env.example` serve como modelo para configuração.
 
 ---
 
 # 6. Integração Contínua (CI)
 
-**Workflow**
+Foi criado o workflow:
 
 ```
 .github/workflows/ci.yml
 ```
 
-**Disparado em**
+O CI é executado nos eventos:
 
 - push
 - pull_request
 
-### O pipeline realiza as seguintes etapas:
+O pipeline realiza:
 
-1. Valida o arquivo Docker Compose.
-2. Constrói a imagem Docker.
-3. Inicia os containers.
-4. Aguarda a aplicação responder e realiza um teste criando uma tarefa via API.
-5. Finaliza os containers.
-
----
-
-## Print 8
-
-*Workflow do GitHub Actions executado com sucesso.*
-
-(Coloque a imagem aqui)
+1. Download do código.
+2. Criação do arquivo `.env`.
+3. Validação do Docker Compose.
+4. Build da imagem.
+5. Inicialização dos containers.
+6. Teste para verificar se a aplicação responde.
+7. Criação de uma tarefa pela API.
+8. Encerramento dos containers.
 
 ---
 
 # 7. Quebra proposital do CI
 
-### O que foi alterado?
+Foi realizada uma alteração proposital para testar se o CI conseguiria identificar um erro.
 
-Foi realizada uma alteração proposital no projeto para provocar uma falha no pipeline de CI.
+## Como o CI reagiu:
 
-### Erro apresentado
+O GitHub Actions identificou o problema durante a execução do teste e marcou o workflow como falho.
 
-```
-[Cole aqui a mensagem principal do erro.]
-```
+## Como foi corrigido:
 
-### Como o CI reagiu?
+A alteração incorreta foi desfeita e um novo commit foi enviado. Depois disso o pipeline voltou a funcionar.
 
-O workflow interrompeu a execução no passo em que encontrou o erro, impedindo que as próximas etapas fossem executadas.
+## Link do Pull Request:
 
-### Como foi corrigido?
-
-A alteração incorreta foi desfeita e um novo commit foi enviado ao repositório, fazendo o pipeline voltar a executar com sucesso.
-
-### Link do Pull Request
-
-```
-[Cole o link]
-```
-
----
-
-## Print 9
-
-*Execução do workflow em vermelho mostrando o erro.*
-
-(Coloque a imagem aqui)
+[LINK DO PR]
 
 ---
 
 # 8. Dificuldades e aprendizados
 
-Durante a atividade, a principal dificuldade foi configurar corretamente o Docker Compose e os workflows do GitHub Actions. Também foi necessário entender como funcionam os volumes, redes e variáveis de ambiente. Após resolver os problemas, ficou mais claro como o Docker facilita a criação de ambientes padronizados e como o CI automatiza testes sempre que o código é atualizado.
+Durante a atividade tive dificuldades principalmente na configuração do Docker Compose, volumes e GitHub Actions. Com os testes e correções consegui entender melhor como os containers funcionam, como eles se comunicam e como automatizar testes usando CI.
+
+Também aprendi como publicar uma imagem Docker automaticamente usando CD.
 
 ---
 
 # 9. Checklist
 
-- [x] Dockerfile multi-stage funcionando
-- [x] .dockerignore presente
-- [x] Container executando sem usuário root
-- [x] Volume nomeado com persistência
-- [x] Rede nomeada
-- [x] Banco não exposto ao host
-- [x] Docker Compose funcionando
-- [x] `.env` no `.gitignore`
-- [x] `.env.example` versionado
-- [x] CI funcionando
-- [x] PR com CI vermelho documentado
-- [x] Todos os prints adicionados
+✅ Dockerfile multi-stage funcionando  
+✅ .dockerignore criado  
+✅ Container sem usuário root  
+✅ Volume nomeado com persistência  
+✅ Rede Docker configurada  
+✅ Banco sem porta exposta  
+✅ Docker Compose funcionando  
+✅ .env protegido  
+✅ .env.example criado  
+✅ CI funcionando  
+✅ Erro proposital documentado  
+✅ CD publicado no Docker Hub  
 
 ---
 
-# CD – Publicação no Docker Hub
+# CD - Publicação no Docker Hub
 
-**Aluno(a):** [Seu nome]
 
-**Turma:** [Sua turma]
+**Usuário Docker Hub:**
 
-**Usuário do Docker Hub:** [Seu usuário]
+```
+dudalps
+```
 
 **Imagem publicada:**
 
 ```
-[seu-usuario]/projeto-devops:latest
+[SEU USUARIO/meu-projeto-docker:latest
 ```
 
-**Link da imagem no Docker Hub**
+**Link da imagem:**
 
-[Cole aqui o link.]
+https://hub.docker.com/repository/docker/dudalps/meu-projeto-docker/general
 
-**Dispara quando**
+---
 
-```
-push na branch main
-```
+## Workflow utilizado
 
-**Workflow**
+Arquivo:
 
 ```
 .github/workflows/cd.yml
 ```
 
----
+O CD é executado quando ocorre:
 
-## Print 1
+```
+push na branch main
+```
 
-*Token criado no Docker Hub.*
+O processo realiza:
 
-(Coloque a imagem aqui)
-
----
-
-## Print 2
-
-*Secrets cadastrados no GitHub (`DOCKERHUB_USERNAME` e `DOCKERHUB_TOKEN`).*
-
-(Coloque a imagem aqui)
+1. Baixa o código.
+2. Faz login no Docker Hub usando Secrets.
+3. Constrói a imagem Docker.
+4. Publica a imagem automaticamente.
 
 ---
 
-## Print 3
+# Respostas do CD
 
-*Workflow de CD executado com sucesso.*
+## 1. O que é o Docker Hub?
 
-(Coloque a imagem aqui)
-
----
-
-## Print 4
-
-*Imagem publicada no Docker Hub.*
-
-(Coloque a imagem aqui)
+Na minha visão, o Docker Hub é um lugar onde podemos guardar e compartilhar imagens Docker pela internet. Assim outras pessoas conseguem baixar uma imagem pronta e executar uma aplicação sem precisar configurar tudo novamente.
 
 ---
 
-## Print 5
+## 2. Qual a diferença entre CI e CD?
 
-*Resultado do comando `docker pull`.*
-
-(Coloque a imagem aqui)
+O CI serve para testar automaticamente se o projeto continua funcionando quando faço alterações no código. O CD serve para pegar essa aplicação que passou pelos testes e publicar ela automaticamente em um lugar como o Docker Hub.
 
 ---
 
-# Respostas
+## 3. Por que usamos token e Secrets em vez de escrever usuário e senha no arquivo?
 
-### 1. O que é o Docker Hub?
-
-O Docker Hub é um serviço online utilizado para armazenar, compartilhar e distribuir imagens Docker. Ele permite publicar imagens para que possam ser baixadas e executadas em qualquer computador que tenha Docker instalado.
+Porque deixar usuário e senha no código seria inseguro, já que qualquer pessoa com acesso ao repositório poderia ver essas informações. Os Secrets guardam esses dados de forma protegida e o token permite um acesso controlado.
 
 ---
 
-### 2. Qual a diferença entre CI e CD?
+## 4. O que significa a tag latest?
 
-O CI (Integração Contínua) verifica automaticamente se o projeto está funcionando corretamente sempre que há alterações no código. Já o CD (Entrega Contínua) publica automaticamente a imagem Docker no Docker Hub após o processo de CI ser concluído com sucesso.
-
----
-
-### 3. Por que usamos token e Secrets em vez de escrever usuário e senha no `cd.yml`?
-
-Porque usuário e senha são informações sensíveis. Os Secrets do GitHub armazenam esses dados de forma segura, enquanto o token permite um acesso controlado ao Docker Hub sem expor a senha da conta no repositório.
+A tag `latest` significa que aquela imagem representa a versão mais recente publicada. Quando não informamos uma versão específica ao baixar uma imagem, normalmente essa é a versão utilizada.
 
 ---
 
-### 4. O que significa a tag `latest`?
+# Conclusão
 
-A tag `latest` representa a versão mais recente da imagem publicada. Quando nenhuma versão específica é informada no comando `docker pull`, normalmente essa é a versão utilizada pelo Docker.
+Com essa atividade foi possível entender o caminho completo de uma aplicação: desde a criação da imagem Docker, execução em containers, comunicação entre serviços, testes automáticos com CI e publicação automática utilizando CD.
